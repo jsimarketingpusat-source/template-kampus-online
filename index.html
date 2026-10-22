@@ -41,7 +41,9 @@ button{cursor:pointer}
 .campus-title{display:flex;align-items:center;gap:13px}.big-icon{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;color:#fff;font-size:23px}
 .campus-title h3{margin:0 0 3px;font-size:20px}.campus-title span{font-size:13px;color:var(--muted)}
 .settings{border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:9px;font-weight:600;color:#3b4d66}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:#f3f6fa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.category-toolbar{display:flex;justify-content:flex-end;padding:10px 14px;background:#f8fafc;border-top:1px solid var(--line)}
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));background:#f3f6fa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.category-modal{width:min(680px,100%)}.category-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0}.category-row .category-name{flex:1;font-weight:700}.category-row button{white-space:nowrap}.category-list{max-height:45vh;overflow:auto}
 .tab{border:0;background:transparent;padding:14px 8px;font-weight:700;color:#41536c}.tab.active{background:var(--blue);color:#fff}
 .content{display:grid;grid-template-columns:235px 1fr;min-height:475px}
 .template-list{border-right:1px solid var(--line);padding:15px 11px;background:#fbfcfe}
@@ -156,6 +158,7 @@ textarea:focus,.title-input:focus{border-color:#8eb9ee;box-shadow:0 0 0 3px #eaf
       </div>
       <button class="settings" onclick="openCampusSettings()">⚙ Pengaturan Kampus</button>
     </div>
+    <div class="category-toolbar"><button class="settings" onclick="openCategoryManager()">⚙ Kelola Kategori</button></div>
     <div class="tabs" id="tabs"></div>
     <div class="content">
       <div class="template-list" id="templateList"></div>
@@ -219,13 +222,23 @@ textarea:focus,.title-input:focus{border-color:#8eb9ee;box-shadow:0 0 0 3px #eaf
     </div>
   </div>
 </div>
+<div class="modal-backdrop" id="categoryModal">
+  <div class="modal category-modal">
+    <h3>⚙ Kelola Kategori Template Induk</h3>
+    <p style="color:#718096;font-size:13px;margin-top:-8px">Tambah kategori baru, ubah nama kategori, atau hapus kategori yang tidak digunakan. Perubahan disimpan bersama melalui Supabase saat login online.</p>
+    <label>Nama kategori baru</label>
+    <div style="display:flex;gap:8px;align-items:center"><input class="title-input" style="margin:0;flex:1" id="newCategoryName" placeholder="Contoh: Template Follow Up"><button class="save" onclick="addCategory()">＋ Tambah</button></div>
+    <div class="category-list" id="categoryList"></div>
+    <div class="modal-actions"><button class="secondary" onclick="closeCategoryManager()">Tutup</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const colors=['#1976f3','#18b56a','#ef4444','#f28c28','#7c4dff','#13a8a8','#e94f91','#f3ad13','#6b7788'];
 const icons=['🏫','🏛️','🎓','🏢','📚','🏫','🎓','🏛️','🏢'];
-const types=[
+let types=[
   {id:'dm',name:'Template DM',icon:'💬',desc:'Direct Message'},
   {id:'bc',name:'Template BC',icon:'📢',desc:'Broadcast'},
   {id:'brosur',name:'Template Brosur',icon:'🖼️',desc:'Brosur'},
@@ -263,10 +276,29 @@ function sampleText(c,t){
   if(t==='brosur') return `📚 INFORMASI KAMPUS ${c}\\n\\nProgram Studi: [isi program studi]\\nBiaya Kuliah: [isi biaya]\\nBeasiswa: [isi informasi]\\nPendaftaran: [isi link]`;
   return `🔗 DAFTAR ONLINE KAMPUS ${c}\\n\\nSilakan melakukan pendaftaran secara online melalui link berikut:\\n[MASUKKAN LINK PENDAFTARAN]\\n\\nJika mengalami kendala, silakan hubungi admin.`;
 }
-if(!state){state=defaultData();save();}
+if(!state){state=defaultData();}
+// Migrasi ringan: kategori tetap kompatibel dengan data lama, tanpa menghapus template.
+try {
+  const savedTypes = state[0] && Array.isArray(state[0].categoryDefinitions) ? state[0].categoryDefinitions : JSON.parse(localStorage.getItem('kampusTemplateTypes')||'null');
+  if(savedTypes && savedTypes.length) types = savedTypes;
+} catch(e) {}
+function ensureCategoryData(){
+  if(!Array.isArray(types) || !types.length) types=[
+    {id:'dm',name:'Template DM',icon:'💬',desc:'Direct Message'},
+    {id:'bc',name:'Template BC',icon:'📢',desc:'Broadcast'},
+    {id:'brosur',name:'Template Brosur',icon:'🖼️',desc:'Brosur'},
+    {id:'online',name:'Template Daftar Online',icon:'🔗',desc:'Pendaftaran Online'}
+  ];
+  state.forEach(c=>{c.templates=c.templates||{};types.forEach(t=>{if(!Array.isArray(c.templates[t.id]))c.templates[t.id]=[];});});
+  if(state[0]) state[0].categoryDefinitions=types;
+  localStorage.setItem('kampusTemplateTypes',JSON.stringify(types));
+}
+ensureCategoryData();save();
 
 function save(){
+  if(state[0]) state[0].categoryDefinitions=types;
   localStorage.setItem('kampusTemplateManager',JSON.stringify(state));
+  localStorage.setItem('kampusTemplateTypes',JSON.stringify(types));
   if(onlineUser && supabaseClient && !isApplyingRemote){
     setSyncStatus('Menyimpan perubahan…','');
     clearTimeout(remoteSaveTimer);
@@ -324,9 +356,12 @@ async function loadRemoteState(){
   try{
     const {data,error}=await supabaseClient.from('kampus_shared_state').select('payload').eq('id',1).maybeSingle();
     if(error)throw error;
-    if(data && data.payload && Array.isArray(data.payload)){
-      isApplyingRemote=true;state=data.payload;localStorage.setItem('kampusTemplateManager',JSON.stringify(state));
-      selectedCampus=Math.min(selectedCampus,state.length-1);selectedType='dm';selectedTemplate=0;editMode=false;render();isApplyingRemote=false;
+    if(data && data.payload && (Array.isArray(data.payload) || (Array.isArray(data.payload.campuses) && Array.isArray(data.payload.types)))){
+      isApplyingRemote=true;
+      if(Array.isArray(data.payload)){state=data.payload;} else {state=data.payload.campuses;types=data.payload.types;}
+      ensureCategoryData();
+      localStorage.setItem('kampusTemplateManager',JSON.stringify(state));
+      selectedCampus=Math.max(0,Math.min(selectedCampus,state.length-1));selectedType=types.some(t=>t.id===selectedType)?selectedType:types[0].id;selectedTemplate=0;editMode=false;render();isApplyingRemote=false;
     }else{
       // Data lokal pertama kali diunggah hanya jika tabel bersama masih kosong.
       await saveRemoteState(true);
@@ -338,7 +373,8 @@ async function loadRemoteState(){
 async function saveRemoteState(initial=false){
   if(!supabaseClient||!onlineUser||isApplyingRemote)return;
   try{
-    const payload=JSON.parse(JSON.stringify(state));
+    if(state[0]) state[0].categoryDefinitions=types;
+    const payload={version:2,campuses:JSON.parse(JSON.stringify(state)),types:JSON.parse(JSON.stringify(types))};
     const {error}=await supabaseClient.from('kampus_shared_state').upsert({id:1,payload,updated_at:new Date().toISOString()},{onConflict:'id'});
     if(error)throw error;
     setSyncStatus('Tersinkronisasi','online');
@@ -354,7 +390,8 @@ function renderCampus(){
 }
 function render(){
   renderCampus();
-  const c=state[selectedCampus], type=types.find(t=>t.id===selectedType);
+  const c=state[selectedCampus], type=types.find(t=>t.id===selectedType)||types[0];
+  if(!types.some(t=>t.id===selectedType)) selectedType=type.id;
   document.getElementById('campusTitle').textContent=c.name;
   document.getElementById('campusSubtitle').textContent=c.subtitle||type.desc;
   document.getElementById('bigIcon').style.background=colors[selectedCampus];
@@ -390,7 +427,7 @@ function renderEditor(filtered){
     </div>`;
   if(editMode) document.getElementById('editText').addEventListener('input',()=>document.getElementById('charCount').textContent=document.getElementById('editText').value.length+' karakter');
 }
-function selectCampus(i){selectedCampus=i;selectedTemplate=0;selectedType='dm';editMode=false;render()}
+function selectCampus(i){selectedCampus=i;selectedTemplate=0;selectedType=types.some(t=>t.id==='dm')?'dm':types[0].id;editMode=false;render()}
 function selectType(t){selectedType=t;selectedTemplate=0;editMode=false;render()}
 function selectTemplate(i){selectedTemplate=i;editMode=false;render()}
 function toggleEdit(){editMode=true;render()}
@@ -406,6 +443,7 @@ function saveModal(){
   const name=document.getElementById('modalName').value.trim();
   const text=document.getElementById('modalText').value;
   if(!name||!text){toast('Nama dan isi template wajib diisi.');return}
+  if(!Array.isArray(state[selectedCampus].templates[selectedType]))state[selectedCampus].templates[selectedType]=[];
   state[selectedCampus].templates[selectedType].push({name,text});
   selectedTemplate=state[selectedCampus].templates[selectedType].length-1;
   save();closeModal();render();toast('Template baru ditambahkan.');
@@ -463,7 +501,7 @@ function addCampus(){
   const name=prompt('Nama kampus baru:',`Kampus ${next}`);
   if(!name||!name.trim())return;
   const c={name:name.trim(),subtitle:'Kelola template '+name.trim(),logo:'',templates:{}};
-  types.forEach(t=>{c.templates[t.id]=[]});
+  types.forEach(t=>{c.templates[t.id]=[]}); c.categoryDefinitions=types;
   state.push(c);selectedCampus=state.length-1;selectedType='dm';selectedTemplate=0;editMode=false;
   save();closeCampusSettings();render();toast('Kampus baru berhasil ditambahkan.');
 }
@@ -472,8 +510,41 @@ function deleteCampus(){
   const c=state[selectedCampus];
   if(!confirm(`Hapus "${c.name}" beserta seluruh templatenya?\\n\\nTindakan ini tidak bisa dibatalkan kecuali Anda memiliki backup.`))return;
   state.splice(selectedCampus,1);
-  selectedCampus=Math.min(selectedCampus,state.length-1);selectedType='dm';selectedTemplate=0;editMode=false;
+  selectedCampus=Math.min(selectedCampus,state.length-1);selectedType=types.some(t=>t.id==='dm')?'dm':types[0].id;selectedTemplate=0;editMode=false;
   save();closeCampusSettings();render();toast('Kampus berhasil dihapus.');
+}
+function openCategoryManager(){renderCategoryManager();document.getElementById('categoryModal').classList.add('show');}
+function closeCategoryManager(){document.getElementById('categoryModal').classList.remove('show');document.getElementById('newCategoryName').value='';}
+function renderCategoryManager(){
+  const list=document.getElementById('categoryList');
+  list.innerHTML=types.map((t,i)=>`<div class="category-row"><span style="font-size:22px">${esc(t.icon||'📁')}</span><span class="category-name">${esc(t.name)}</span><button class="small-btn" onclick="renameCategory('${t.id}')">✏️ Edit</button><button class="danger-btn" onclick="deleteCategory('${t.id}')">🗑 Hapus</button></div>`).join('');
+}
+function addCategory(){
+  const name=document.getElementById('newCategoryName').value.trim();
+  if(!name){toast('Nama kategori wajib diisi.');return;}
+  if(types.some(t=>t.name.toLowerCase()===name.toLowerCase())){toast('Nama kategori tersebut sudah ada.');return;}
+  const base=name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'kategori';
+  let id=base, n=2; while(types.some(t=>t.id===id)){id=base+'_'+n++;}
+  const type={id,name,icon:'📁',desc:name.replace(/^Template\s*/i,'')};
+  types.push(type);state.forEach(c=>{c.templates=c.templates||{};c.templates[id]=[];});
+  selectedType=id;selectedTemplate=0;document.getElementById('newCategoryName').value='';save();renderCategoryManager();render();toast('Kategori baru ditambahkan dan disimpan.');
+}
+function renameCategory(id){
+  const t=types.find(x=>x.id===id);if(!t)return;
+  const name=prompt('Nama kategori:',t.name);if(name===null)return;
+  if(!name.trim()){toast('Nama kategori tidak boleh kosong.');return;}
+  if(types.some(x=>x.id!==id&&x.name.toLowerCase()===name.trim().toLowerCase())){toast('Nama kategori tersebut sudah ada.');return;}
+  t.name=name.trim();t.desc=t.name.replace(/^Template\s*/i,'');save();renderCategoryManager();render();toast('Nama kategori diperbarui.');
+}
+function deleteCategory(id){
+  const t=types.find(x=>x.id===id);if(!t)return;
+  if(types.length<=1){toast('Minimal harus ada satu kategori.');return;}
+  const count=state.reduce((n,c)=>n+((c.templates&&c.templates[id])||[]).length,0);
+  const warning=count?`\n\nKategori ini berisi ${count} template di semua kampus. Menghapus kategori juga menghapus template di dalamnya dari data aktif. Buat Backup terlebih dahulu jika ingin menyimpannya.`:'';
+  if(!confirm(`Hapus kategori "${t.name}"?${warning}\n\nKategori ini akan dihapus dari seluruh kampus.`))return;
+  types=types.filter(x=>x.id!==id);state.forEach(c=>{if(c.templates)delete c.templates[id];});
+  if(selectedType===id){selectedType=types[0].id;selectedTemplate=0;editMode=false;}
+  save();renderCategoryManager();render();toast('Kategori dihapus.');
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -483,17 +554,18 @@ function importData(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data)||data.length<1)throw Error();
-      data.forEach((c,i)=>{c.name=c.name||'Kampus '+(i+1);c.subtitle=c.subtitle||'Kelola template '+c.name;c.logo=c.logo||'';c.templates=c.templates||{};types.forEach(t=>{c.templates[t.id]=Array.isArray(c.templates[t.id])?c.templates[t.id]:[]})});state=data;selectedCampus=0;selectedType='dm';selectedTemplate=0;save();render();toast('Backup berhasil di-import.')}catch(err){alert('File backup tidak valid. Pastikan menggunakan file JSON dari tombol Backup.')}};
+      data.forEach((c,i)=>{c.name=c.name||'Kampus '+(i+1);c.subtitle=c.subtitle||'Kelola template '+c.name;c.logo=c.logo||'';c.templates=c.templates||{};types.forEach(t=>{c.templates[t.id]=Array.isArray(c.templates[t.id])?c.templates[t.id]:[]})});state=data;selectedCampus=0;selectedType=types.some(t=>t.id==='dm')?'dm':types[0].id;selectedTemplate=0;ensureCategoryData();save();render();toast('Backup berhasil di-import.')}catch(err){alert('File backup tidak valid. Pastikan menggunakan file JSON dari tombol Backup.')}};
   reader.readAsText(file);e.target.value='';
 }
 function showAll(){document.getElementById('search').focus();toast('Gunakan pencarian untuk melihat template dari kampus aktif.')}
-function showGuide(){alert('PANDUAN SINGKAT\\n\\n1. Pilih kampus.\\n2. Pilih kategori DM, BC, Brosur, atau Daftar Online.\\n3. Pilih template.\\n4. Klik Copy untuk menyalin.\\n5. Klik Edit untuk mengubah.\\n6. Klik Tambah Teks Template untuk membuat template baru.\\n7. Data otomatis tersimpan di browser.\\n8. Gunakan Backup untuk menyimpan cadangan JSON.\n9. Untuk data bersama, login online dan pastikan status Tersinkronisasi.')}
+function showGuide(){alert('PANDUAN SINGKAT\\n\\n1. Pilih kampus.\\n2. Pilih kategori template induk. Kategori dapat ditambah, diedit, atau dihapus melalui Kelola Kategori.\\n3. Pilih template.\\n4. Klik Copy untuk menyalin.\\n5. Klik Edit untuk mengubah.\\n6. Klik Tambah Teks Template untuk membuat template baru.\\n7. Data otomatis tersimpan di browser.\\n8. Gunakan Backup untuk menyimpan cadangan JSON.\n9. Untuk data bersama, login online dan pastikan status Tersinkronisasi.')}
 function showAbout(){alert('TEMPLATE KAMPUS\\n\\nStandalone HTML — tidak membutuhkan server atau database.\\nData tersimpan di localStorage browser.')}
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>el.classList.remove('show'),2200)}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function attr(s){return esc(s)}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 document.getElementById('campusSettingsModal').addEventListener('click',e=>{if(e.target.id==='campusSettingsModal')closeCampusSettings()});
+document.getElementById('categoryModal').addEventListener('click',e=>{if(e.target.id==='categoryModal')closeCategoryManager()});
 render();
 initOnline();
 </script>
