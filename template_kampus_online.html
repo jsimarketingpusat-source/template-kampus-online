@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Kampus — Manager Online</title>
+<style>
+:root{
+  --navy:#173b68; --blue:#1976f3; --blue2:#0d5bd7; --green:#18b56a;
+  --red:#e84b4b; --bg:#f4f7fb; --card:#fff; --text:#17253a; --muted:#718096;
+  --line:#e3eaf3; --shadow:0 8px 25px rgba(31,55,88,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.topbar{height:86px;background:linear-gradient(135deg,#173b68,#1e5796);color:#fff;display:flex;align-items:center;padding:0 30px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:15px}
+.brand-icon{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:24px}
+.brand h1{margin:0;font-size:23px}.brand p{margin:3px 0 0;color:#d9e8fb;font-size:13px}
+.top-actions{display:flex;gap:9px}
+.top-btn{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;padding:10px 14px;border-radius:9px}
+.layout{display:flex;min-height:calc(100vh - 86px)}
+.sidebar{width:225px;background:#fff;border-right:1px solid var(--line);padding:22px 14px;flex-shrink:0}
+.side-btn{width:100%;border:0;background:transparent;text-align:left;padding:13px 14px;border-radius:10px;color:#273a55;margin-bottom:5px;font-weight:600}
+.side-btn.active,.side-btn:hover{background:#eaf3ff;color:var(--blue)}
+.side-tip{margin-top:28px;padding:15px;background:#f1f7ff;border:1px solid #dcecff;border-radius:12px;font-size:12px;line-height:1.55;color:#536982}
+.main{flex:1;padding:26px;overflow:hidden}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
+.page-head h2{margin:0 0 5px;font-size:26px}.page-head p{margin:0;color:var(--muted)}
+.search{width:270px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none}
+.search:focus{border-color:#9fc5f7;box-shadow:0 0 0 3px #e8f2ff}
+.campus-grid{display:grid;grid-template-columns:repeat(9,minmax(105px,1fr));gap:10px;margin-bottom:20px}
+.campus-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center;transition:.15s;box-shadow:0 2px 8px rgba(31,55,88,.03)}
+.campus-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.campus-card.active{border:2px solid var(--blue);padding:13px 7px;background:#f8fbff}
+.campus-icon{width:38px;height:38px;border-radius:50%;margin:auto auto 8px;display:grid;place-items:center;color:#fff;font-size:18px}
+.campus-name{font-weight:800;font-size:12px;line-height:1.2}.campus-number{font-size:10px;margin-top:5px;color:var(--muted)}
+.workspace{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.workspace-head{padding:20px 22px;display:flex;justify-content:space-between;align-items:center}
+.campus-title{display:flex;align-items:center;gap:13px}.big-icon{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;color:#fff;font-size:23px}
+.campus-title h3{margin:0 0 3px;font-size:20px}.campus-title span{font-size:13px;color:var(--muted)}
+.settings{border:1px solid var(--line);background:#fff;padding:9px 13px;border-radius:9px;font-weight:600;color:#3b4d66}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:#f3f6fa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:14px 8px;font-weight:700;color:#41536c}.tab.active{background:var(--blue);color:#fff}
+.content{display:grid;grid-template-columns:235px 1fr;min-height:475px}
+.template-list{border-right:1px solid var(--line);padding:15px 11px;background:#fbfcfe}
+.list-head{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px;font-size:13px;font-weight:800}
+.count{background:#eaf3ff;color:var(--blue);border-radius:20px;padding:3px 8px}
+.template-item{padding:11px 12px;border-radius:9px;margin-bottom:5px;cursor:pointer;border:1px solid transparent}
+.template-item:hover{background:#f0f6ff}.template-item.active{background:#eaf3ff;border-color:#cfe3ff;color:var(--blue);font-weight:700}
+.template-item small{display:block;color:var(--muted);font-weight:400;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.editor{padding:22px}
+.editor-top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:13px}
+.editor-top h3{margin:0 0 4px;font-size:20px}.editor-top p{margin:0;color:var(--muted);font-size:13px}
+.primary{border:0;background:var(--green);color:#fff;padding:11px 15px;border-radius:9px;font-weight:800;white-space:nowrap}
+.title-input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin-bottom:10px;outline:none}
+textarea{width:100%;min-height:270px;resize:vertical;border:1px solid #cfd9e7;border-radius:10px;padding:15px;line-height:1.6;outline:none}
+textarea:focus,.title-input:focus{border-color:#8eb9ee;box-shadow:0 0 0 3px #eaf3ff}
+.editor-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
+.actions{display:flex;gap:9px;margin-top:15px}.action{border:0;padding:11px 18px;border-radius:9px;font-weight:800}.copy{background:var(--blue);color:#fff}.edit{background:#edf4ff;color:#1857a9}.delete{background:#fff0f0;color:#d63333;border:1px solid #ffd4d4}
+.empty{padding:35px 20px;text-align:center;color:var(--muted)}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(16,30,48,.48);align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal-backdrop.show{display:flex}.modal{background:#fff;width:min(560px,100%);border-radius:15px;padding:22px;box-shadow:0 25px 70px rgba(0,0,0,.2)}
+.modal h3{margin:0 0 17px}.modal label{display:block;font-size:13px;font-weight:700;margin:11px 0 6px}.modal textarea{min-height:190px}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:17px}.secondary{border:1px solid var(--line);background:#fff;padding:10px 15px;border-radius:9px}.save{border:0;background:var(--blue);color:#fff;padding:10px 16px;border-radius:9px;font-weight:800}
+.toast{position:fixed;right:22px;bottom:22px;background:#17253a;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);transition:.2s;pointer-events:none;z-index:20;font-size:13px}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1100px){.campus-grid{grid-template-columns:repeat(5,1fr)}.sidebar{width:180px}}
+@media(max-width:800px){.sidebar{display:none}.main{padding:15px}.page-head{align-items:stretch;flex-direction:column}.search{width:100%}.content{grid-template-columns:1fr}.template-list{border-right:0;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow:auto}.template-item{min-width:140px}.campus-grid{grid-template-columns:repeat(3,1fr)}.workspace-head{align-items:flex-start}.top-actions .top-btn:first-child{display:none}}
+
+.campus-settings-modal{width:min(620px,100%)}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.settings-field{margin-bottom:8px}
+.settings-field.full{grid-column:1/-1}
+.settings-field label{display:block;font-size:13px;font-weight:800;margin:0 0 6px}
+.settings-field input,.settings-field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;outline:none}
+.logo-row{display:flex;align-items:center;gap:14px}
+.logo-preview{width:72px;height:72px;border-radius:15px;background:#edf3fa;display:grid;place-items:center;overflow:hidden;font-size:28px;border:1px solid var(--line)}
+.logo-preview img{width:100%;height:100%;object-fit:cover}
+.logo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.small-btn{border:1px solid var(--line);background:#fff;padding:8px 11px;border-radius:8px;font-weight:700}
+.danger-btn{border:1px solid #ffd0d0;background:#fff2f2;color:#c93636;padding:9px 12px;border-radius:8px;font-weight:800}
+.settings-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px}
+.settings-footer .left{display:flex;gap:8px}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stat{background:#f5f8fc;border:1px solid var(--line);padding:6px 9px;border-radius:20px;font-size:11px;color:#536982}
+@media(max-width:650px){.settings-grid{grid-template-columns:1fr}.settings-field.full{grid-column:auto}.settings-footer{align-items:stretch;flex-direction:column}.settings-footer .left{flex-wrap:wrap}}
+
+/* Sinkronisasi online */
+.sync-status{display:flex;align-items:center;gap:7px;font-size:12px;color:#d9e8fb;margin-left:12px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block}
+.sync-dot.online{background:#34d399}.sync-dot.error{background:#fb7185}
+.login-backdrop{position:fixed;inset:0;background:rgba(9,22,40,.72);display:flex;align-items:center;justify-content:center;padding:18px;z-index:100}
+.login-card{background:#fff;width:min(440px,100%);padding:26px;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.25)}
+.login-card h2{margin:0 0 8px;color:#173b68}.login-card p{color:#64748b;font-size:14px;line-height:1.5}
+.login-card label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+.login-card input{width:100%;padding:12px;border:1px solid #d8e1ed;border-radius:9px}
+.login-card button{width:100%;margin-top:14px;border:0;border-radius:9px;padding:12px;background:#1976f3;color:white;font-weight:800}
+.login-card .login-secondary{background:#edf4ff;color:#1857a9}.login-error{color:#c93636;font-size:13px;min-height:18px;margin-top:10px}
+@media(max-width:650px){.sync-status{display:none}}
+
+</style>
+</head>
+<body>
+
+<div class="login-backdrop" id="loginBackdrop" style="display:none">
+  <div class="login-card">
+    <div style="font-size:32px">🎓</div>
+    <h2>Template Kampus Online</h2>
+    <p>Masuk menggunakan akun tim untuk memuat dan menyimpan data kampus bersama melalui database online.</p>
+    <div id="loginFields">
+      <label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="email@tim.com">
+      <label for="loginPassword">Kata sandi</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Kata sandi akun">
+      <button onclick="onlineLogin()">Masuk dan Sinkronkan</button>
+    </div>
+    <button class="login-secondary" id="offlineButton" onclick="continueOffline()">Gunakan mode lokal sementara</button>
+    <div class="login-error" id="loginError"></div>
+    <p style="font-size:12px;margin-bottom:0">Akun dibuat oleh admin di dashboard Supabase. Jangan bagikan kunci rahasia atau kata sandi.</p>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🎓</div>
+    <div><h1>TEMPLATE KAMPUS</h1><p>Kelola semua template dalam satu tempat</p></div>
+  </div>
+  <div class="top-actions">
+    <span class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Belum terhubung</span></span>
+    <button class="top-btn" id="loginButton" onclick="showLogin()">🔐 Login Online</button>
+    <button class="top-btn" onclick="exportData()">⬇ Backup</button>
+    <button class="top-btn" onclick="document.getElementById('importFile').click()">⬆ Import</button>
+    <input id="importFile" type="file" accept=".json" hidden onchange="importData(event)">
+  </div>
+</header>
+
+<div class="layout">
+<aside class="sidebar">
+  <button class="side-btn active">🏠 &nbsp; Beranda</button>
+  <button class="side-btn" onclick="showAll()">▣ &nbsp; Semua Template</button>
+  <button class="side-btn" onclick="showGuide()">❔ &nbsp; Panduan</button>
+  <button class="side-btn" onclick="showAbout()">ⓘ &nbsp; Tentang</button>
+  <div class="side-tip"><b>💡 Tips</b><br>Gunakan tombol <b>Copy</b> untuk menyalin template dengan cepat. Data otomatis tersimpan di browser.</div>
+</aside>
+
+<main class="main">
+  <div class="page-head">
+    <div><h2>Pilih Kampus</h2><p>Pilih salah satu kampus untuk melihat dan mengelola template.</p></div>
+    <input class="search" id="search" placeholder="🔎 Cari template..." oninput="render()">
+  </div>
+  <div class="campus-grid" id="campusGrid"></div>
+  <section class="workspace">
+    <div class="workspace-head">
+      <div class="campus-title">
+        <div class="big-icon" id="bigIcon">🏫</div>
+        <div><h3 id="campusTitle">Kampus 1</h3><span id="campusSubtitle">Kelola template kampus</span></div>
+      </div>
+      <button class="settings" onclick="openCampusSettings()">⚙ Pengaturan Kampus</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="content">
+      <div class="template-list" id="templateList"></div>
+      <div class="editor" id="editor"></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">Tambah Template</h3>
+    <label>Nama Template</label>
+    <input class="title-input" id="modalName" placeholder="Contoh: Follow Up Pendaftaran">
+    <label>Isi Template</label>
+    <textarea id="modalText" placeholder="Tulis isi template di sini..."></textarea>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeModal()">Batal</button>
+      <button class="save" onclick="saveModal()">Simpan Template</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="campusSettingsModal">
+  <div class="modal campus-settings-modal">
+    <h3>⚙ Pengaturan Kampus</h3>
+    <div class="settings-grid">
+      <div class="settings-field">
+        <label>Nama Kampus</label>
+        <input id="campusNameInput" placeholder="Nama kampus">
+      </div>
+      <div class="settings-field">
+        <label>Keterangan</label>
+        <input id="campusSubtitleInput" placeholder="Keterangan singkat">
+      </div>
+      <div class="settings-field full">
+        <label>Logo Kampus</label>
+        <div class="logo-row">
+          <div class="logo-preview" id="logoPreview">🏫</div>
+          <div class="logo-actions">
+            <button class="small-btn" onclick="document.getElementById('logoFile').click()">📷 Upload Logo</button>
+            <button class="small-btn" onclick="removeCampusLogo()">✕ Hapus Logo</button>
+            <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onchange="handleLogoUpload(event)">
+          </div>
+        </div>
+      </div>
+      <div class="settings-field full">
+        <label>Ringkasan Template</label>
+        <div class="stats" id="campusStats"></div>
+      </div>
+    </div>
+    <div class="settings-footer">
+      <div class="left">
+        <button class="danger-btn" onclick="deleteCampus()">🗑 Hapus Kampus</button>
+        <button class="small-btn" onclick="addCampus()">＋ Tambah Kampus</button>
+      </div>
+      <div class="left">
+        <button class="secondary" onclick="closeCampusSettings()">Batal</button>
+        <button class="save" onclick="saveCampusSettings()">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const colors=['#1976f3','#18b56a','#ef4444','#f28c28','#7c4dff','#13a8a8','#e94f91','#f3ad13','#6b7788'];
+const icons=['🏫','🏛️','🎓','🏢','📚','🏫','🎓','🏛️','🏢'];
+const types=[
+  {id:'dm',name:'Template DM',icon:'💬',desc:'Direct Message'},
+  {id:'bc',name:'Template BC',icon:'📢',desc:'Broadcast'},
+  {id:'brosur',name:'Template Brosur',icon:'🖼️',desc:'Brosur'},
+  {id:'online',name:'Template Daftar Online',icon:'🔗',desc:'Pendaftaran Online'}
+];
+// KONFIGURASI: isi URL dan anon/publishable key dari Supabase project Anda.
+// Jangan pernah memasukkan service_role key ke dalam file HTML.
+const SUPABASE_URL = 'https://tjhkrfzqdxspztzoygug.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'sb_publishable_6A3_C_Mm7Itj3al2BskTdw_elVDWkqa';
+let supabaseClient = null;
+let onlineUser = null;
+let onlineEnabled = false;
+let remoteSaveTimer = null;
+let isApplyingRemote = false;
+let state=JSON.parse(localStorage.getItem('kampusTemplateManager')||'null');
+let selectedCampus=0, selectedType='dm', selectedTemplate=0, editMode=false, modalEditIndex=null;
+
+function defaultData(){
+  const campuses=[];
+  for(let i=1;i<=9;i++){
+    const c={name:'Kampus '+i,subtitle:'Kelola template Kampus '+i,logo:'',templates:{}};
+    types.forEach(t=>{
+      c.templates[t.id]=[
+        {name:t.name.replace('Template ','')+' 1',text:sampleText(i,t.id)},
+        {name:t.name.replace('Template ','')+' 2',text:sampleText(i,t.id)+'\\n\\nTemplate alternatif yang bisa disesuaikan.'}
+      ];
+    });
+    campuses.push(c);
+  }
+  return campuses;
+}
+function sampleText(c,t){
+  if(t==='dm') return `Halo Kak 😊\\n\\nTerima kasih sudah menghubungi Kampus ${c}.\\n\\nKami siap membantu memberikan informasi seputar pendaftaran, program studi, biaya kuliah, beasiswa, serta fasilitas kampus.\\n\\nAda yang bisa kami bantu hari ini?`;
+  if(t==='bc') return `📢 INFO PENDAFTARAN KAMPUS ${c}\\n\\nPendaftaran mahasiswa baru masih dibuka. Segera daftarkan diri dan pilih program studi yang sesuai dengan minat Kakak.\\n\\nSilakan hubungi admin untuk informasi lengkap.`;
+  if(t==='brosur') return `📚 INFORMASI KAMPUS ${c}\\n\\nProgram Studi: [isi program studi]\\nBiaya Kuliah: [isi biaya]\\nBeasiswa: [isi informasi]\\nPendaftaran: [isi link]`;
+  return `🔗 DAFTAR ONLINE KAMPUS ${c}\\n\\nSilakan melakukan pendaftaran secara online melalui link berikut:\\n[MASUKKAN LINK PENDAFTARAN]\\n\\nJika mengalami kendala, silakan hubungi admin.`;
+}
+if(!state){state=defaultData();save();}
+
+function save(){
+  localStorage.setItem('kampusTemplateManager',JSON.stringify(state));
+  if(onlineUser && supabaseClient && !isApplyingRemote){
+    setSyncStatus('Menyimpan perubahan…','');
+    clearTimeout(remoteSaveTimer);
+    remoteSaveTimer=setTimeout(()=>saveRemoteState(),650);
+  }
+}
+function setSyncStatus(label,kind){
+  const labelEl=document.getElementById('syncLabel'),dot=document.getElementById('syncDot');
+  if(labelEl)labelEl.textContent=label;
+  if(dot)dot.className='sync-dot'+(kind?' '+kind:'');
+}
+function showLogin(){
+  document.getElementById('loginBackdrop').style.display='flex';
+  document.getElementById('loginError').textContent='';
+  document.getElementById('offlineButton').style.display=onlineUser?'none':'block';
+  if(onlineUser){document.getElementById('loginFields').innerHTML='<p>Terhubung sebagai <b>'+esc(onlineUser.email||'pengguna')+'</b>.</p><button onclick="syncNow()">Sinkronkan Sekarang</button><button class="login-secondary" onclick="onlineLogout()">Keluar dari akun online</button>';}
+}
+function hideLogin(){document.getElementById('loginBackdrop').style.display='none'}
+function continueOffline(){hideLogin();setSyncStatus('Mode lokal','')}
+async function initOnline(){
+  if(!SUPABASE_URL.startsWith('https://') || SUPABASE_URL.includes('GANTI_DENGAN') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('GANTI_DENGAN')){
+    setSyncStatus('Perlu konfigurasi','');showLogin();return;
+  }
+  try{
+    if(!window.supabase){setSyncStatus('Library online gagal dimuat','error');return;}
+    supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const {data:{session},error}=await supabaseClient.auth.getSession();
+    if(error)throw error;
+    if(session){onlineUser=session.user;await loadRemoteState();}
+    else {setSyncStatus('Belum login','');showLogin();}
+    supabaseClient.auth.onAuthStateChange((event,session)=>{
+      if(event==='SIGNED_OUT'){onlineUser=null;setSyncStatus('Belum login','');document.getElementById('loginButton').textContent='🔐 Login Online';}
+    });
+  }catch(e){setSyncStatus('Koneksi gagal','error');console.error(e);}
+}
+async function onlineLogin(){
+  const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
+  const errEl=document.getElementById('loginError');errEl.textContent='';
+  if(!supabaseClient){errEl.textContent='Konfigurasi Supabase belum diisi dengan benar.';return;}
+  if(!email||!password){errEl.textContent='Email dan kata sandi wajib diisi.';return;}
+  try{
+    const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    onlineUser=data.user;await loadRemoteState();hideLogin();
+  }catch(e){errEl.textContent='Login gagal: '+(e.message||'periksa email, kata sandi, dan konfigurasi');}
+}
+async function onlineLogout(){
+  if(supabaseClient)await supabaseClient.auth.signOut();
+  onlineUser=null;document.getElementById('loginFields').innerHTML='<label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="email@tim.com"><label for="loginPassword">Kata sandi</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Kata sandi akun"><button onclick="onlineLogin()">Masuk dan Sinkronkan</button>';
+  document.getElementById('loginButton').textContent='🔐 Login Online';setSyncStatus('Belum login','');showLogin();
+}
+async function loadRemoteState(){
+  if(!supabaseClient||!onlineUser)return;
+  setSyncStatus('Memuat data bersama…','');
+  try{
+    const {data,error}=await supabaseClient.from('kampus_shared_state').select('payload').eq('id',1).maybeSingle();
+    if(error)throw error;
+    if(data && data.payload && Array.isArray(data.payload)){
+      isApplyingRemote=true;state=data.payload;localStorage.setItem('kampusTemplateManager',JSON.stringify(state));
+      selectedCampus=Math.min(selectedCampus,state.length-1);selectedType='dm';selectedTemplate=0;editMode=false;render();isApplyingRemote=false;
+    }else{
+      // Data lokal pertama kali diunggah hanya jika tabel bersama masih kosong.
+      await saveRemoteState(true);
+    }
+    document.getElementById('loginButton').textContent='👤 '+(onlineUser.email||'Akun online');
+    setSyncStatus('Tersinkronisasi','online');
+  }catch(e){isApplyingRemote=false;setSyncStatus('Gagal memuat data','error');console.error(e);alert('Data online gagal dimuat. Periksa SQL, izin database, dan koneksi Supabase. '+(e.message||''));}
+}
+async function saveRemoteState(initial=false){
+  if(!supabaseClient||!onlineUser||isApplyingRemote)return;
+  try{
+    const payload=JSON.parse(JSON.stringify(state));
+    const {error}=await supabaseClient.from('kampus_shared_state').upsert({id:1,payload,updated_at:new Date().toISOString()},{onConflict:'id'});
+    if(error)throw error;
+    setSyncStatus('Tersinkronisasi','online');
+  }catch(e){setSyncStatus('Gagal menyimpan','error');console.error(e);if(!initial)toast('Gagal menyimpan ke database online. Periksa koneksi/izin.');}
+}
+async function syncNow(){await loadRemoteState();hideLogin();toast('Sinkronisasi selesai.');}
+function renderCampus(){
+  const grid=document.getElementById('campusGrid');
+  grid.innerHTML=state.map((c,i)=>`<div class="campus-card ${i===selectedCampus?'active':''}" onclick="selectCampus(${i})">
+    <div class="campus-icon" style="background:${colors[i]}">${c.logo?`<img src="${attr(c.logo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:icons[i]}</div>
+    <div class="campus-name">${esc(c.name)}</div><div class="campus-number">Kampus ${i+1}</div>
+  </div>`).join('');
+}
+function render(){
+  renderCampus();
+  const c=state[selectedCampus], type=types.find(t=>t.id===selectedType);
+  document.getElementById('campusTitle').textContent=c.name;
+  document.getElementById('campusSubtitle').textContent=c.subtitle||type.desc;
+  document.getElementById('bigIcon').style.background=colors[selectedCampus];
+  document.getElementById('bigIcon').innerHTML=c.logo?`<img src="${attr(c.logo)}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:13px">`:icons[selectedCampus];
+  document.getElementById('tabs').innerHTML=types.map(t=>`<button class="tab ${t.id===selectedType?'active':''}" onclick="selectType('${t.id}')">${t.icon} &nbsp;${t.name}</button>`).join('');
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  let arr=c.templates[selectedType]||[];
+  const filtered=arr.map((x,i)=>({...x,_i:i})).filter(x=>(x.name+' '+x.text).toLowerCase().includes(q));
+  document.getElementById('templateList').innerHTML=`<div class="list-head"><span>${type.name}</span><span class="count">${filtered.length}</span></div>`+
+    (filtered.length?filtered.map(x=>`<div class="template-item ${x._i===selectedTemplate?'active':''}" onclick="selectTemplate(${x._i})">
+      ${esc(x.name)}<small>${esc(x.text.replace(/\n/g,' ').slice(0,48))}</small></div>`).join(''):`<div class="empty">Belum ada template.</div>`);
+  renderEditor(filtered);
+}
+function renderEditor(filtered){
+  const c=state[selectedCampus], arr=c.templates[selectedType]||[];
+  if(!arr.length || filtered.length===0){
+    document.getElementById('editor').innerHTML=`<div class="empty"><div style="font-size:35px">📝</div><h3>Belum ada template</h3><p>Tambahkan template baru untuk kategori ini.</p><button class="primary" onclick="openAdd()">＋ Tambah Teks Template</button></div>`;
+    return;
+  }
+  if(!arr[selectedTemplate]) selectedTemplate=arr.length-1;
+  const item=arr[selectedTemplate];
+  const type=types.find(t=>t.id===selectedType);
+  document.getElementById('editor').innerHTML=`
+    <div class="editor-top"><div><h3>${type.icon} ${esc(item.name)}</h3><p>${type.desc} untuk ${esc(c.name)}</p></div>
+    <button class="primary" onclick="openAdd()">＋ Tambah Teks Template</button></div>
+    <input class="title-input" id="editName" value="${attr(item.name)}" ${editMode?'':'disabled'}>
+    <textarea id="editText" ${editMode?'':'disabled'}>${esc(item.text)}</textarea>
+    <div class="editor-footer"><span id="charCount">${item.text.length} karakter</span><span>Perubahan tersimpan lokal/online</span></div>
+    <div class="actions">
+      <button class="action copy" onclick="copyCurrent()">📋 Copy</button>
+      ${editMode?'<button class="action edit" onclick="saveEdit()">💾 Simpan</button>':'<button class="action edit" onclick="toggleEdit()">✏️ Edit</button>'}
+      <button class="action delete" onclick="deleteCurrent()">🗑 Hapus</button>
+    </div>`;
+  if(editMode) document.getElementById('editText').addEventListener('input',()=>document.getElementById('charCount').textContent=document.getElementById('editText').value.length+' karakter');
+}
+function selectCampus(i){selectedCampus=i;selectedTemplate=0;selectedType='dm';editMode=false;render()}
+function selectType(t){selectedType=t;selectedTemplate=0;editMode=false;render()}
+function selectTemplate(i){selectedTemplate=i;editMode=false;render()}
+function toggleEdit(){editMode=true;render()}
+function saveEdit(){
+  const item=state[selectedCampus].templates[selectedType][selectedTemplate];
+  item.name=document.getElementById('editName').value.trim()||'Template Tanpa Nama';
+  item.text=document.getElementById('editText').value;
+  editMode=false;save();render();toast('Template berhasil disimpan.');
+}
+function openAdd(){modalEditIndex=null;document.getElementById('modalTitle').textContent='Tambah Template';document.getElementById('modalName').value='';document.getElementById('modalText').value='';document.getElementById('modal').classList.add('show');setTimeout(()=>document.getElementById('modalName').focus(),50)}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function saveModal(){
+  const name=document.getElementById('modalName').value.trim();
+  const text=document.getElementById('modalText').value;
+  if(!name||!text){toast('Nama dan isi template wajib diisi.');return}
+  state[selectedCampus].templates[selectedType].push({name,text});
+  selectedTemplate=state[selectedCampus].templates[selectedType].length-1;
+  save();closeModal();render();toast('Template baru ditambahkan.');
+}
+async function copyCurrent(){
+  const arr=state[selectedCampus].templates[selectedType], item=arr[selectedTemplate];
+  try{await navigator.clipboard.writeText(item.text);toast('Template berhasil di-copy.')}
+  catch(e){const ta=document.createElement('textarea');ta.value=item.text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Template berhasil di-copy.')}
+}
+function deleteCurrent(){
+  const arr=state[selectedCampus].templates[selectedType], item=arr[selectedTemplate];
+  if(!confirm(`Hapus "${item.name}"?\\n\\nTemplate yang dihapus tidak bisa dikembalikan kecuali dari backup.`))return;
+  arr.splice(selectedTemplate,1);selectedTemplate=Math.max(0,selectedTemplate-1);save();render();toast('Template dihapus.');
+}
+let pendingCampusLogo='';
+function openCampusSettings(){
+  const c=state[selectedCampus];
+  pendingCampusLogo=c.logo||'';
+  document.getElementById('campusNameInput').value=c.name||'';
+  document.getElementById('campusSubtitleInput').value=c.subtitle||'';
+  updateLogoPreview();
+  updateCampusStats();
+  document.getElementById('campusSettingsModal').classList.add('show');
+}
+function closeCampusSettings(){document.getElementById('campusSettingsModal').classList.remove('show')}
+function updateLogoPreview(){
+  const el=document.getElementById('logoPreview');
+  el.innerHTML=pendingCampusLogo?`<img src="${attr(pendingCampusLogo)}" alt="Logo">`:icons[selectedCampus];
+}
+function handleLogoUpload(e){
+  const file=e.target.files[0]; if(!file)return;
+  if(file.size>2*1024*1024){toast('Ukuran logo maksimal 2 MB.');e.target.value='';return}
+  const reader=new FileReader();
+  reader.onload=()=>{pendingCampusLogo=reader.result;updateLogoPreview();toast('Logo siap disimpan.')};
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+function removeCampusLogo(){pendingCampusLogo='';updateLogoPreview()}
+function updateCampusStats(){
+  const c=state[selectedCampus];
+  const stats=types.map(t=>`<span class="stat">${t.icon} ${t.name.replace('Template ','')}: ${(c.templates[t.id]||[]).length}</span>`).join('');
+  document.getElementById('campusStats').innerHTML=stats;
+}
+function saveCampusSettings(){
+  const c=state[selectedCampus];
+  const name=document.getElementById('campusNameInput').value.trim();
+  if(!name){toast('Nama kampus wajib diisi.');return}
+  c.name=name;
+  c.subtitle=document.getElementById('campusSubtitleInput').value.trim()||('Kelola template '+name);
+  c.logo=pendingCampusLogo;
+  save();closeCampusSettings();render();toast('Pengaturan kampus berhasil disimpan.');
+}
+function addCampus(){
+  const next=state.length+1;
+  const name=prompt('Nama kampus baru:',`Kampus ${next}`);
+  if(!name||!name.trim())return;
+  const c={name:name.trim(),subtitle:'Kelola template '+name.trim(),logo:'',templates:{}};
+  types.forEach(t=>{c.templates[t.id]=[]});
+  state.push(c);selectedCampus=state.length-1;selectedType='dm';selectedTemplate=0;editMode=false;
+  save();closeCampusSettings();render();toast('Kampus baru berhasil ditambahkan.');
+}
+function deleteCampus(){
+  if(state.length<=1){toast('Minimal harus ada 1 kampus.');return}
+  const c=state[selectedCampus];
+  if(!confirm(`Hapus "${c.name}" beserta seluruh templatenya?\\n\\nTindakan ini tidak bisa dibatalkan kecuali Anda memiliki backup.`))return;
+  state.splice(selectedCampus,1);
+  selectedCampus=Math.min(selectedCampus,state.length-1);selectedType='dm';selectedTemplate=0;editMode=false;
+  save();closeCampusSettings();render();toast('Kampus berhasil dihapus.');
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-template-kampus.json';a.click();URL.revokeObjectURL(a.href);toast('Backup berhasil dibuat.');
+}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data)||data.length<1)throw Error();
+      data.forEach((c,i)=>{c.name=c.name||'Kampus '+(i+1);c.subtitle=c.subtitle||'Kelola template '+c.name;c.logo=c.logo||'';c.templates=c.templates||{};types.forEach(t=>{c.templates[t.id]=Array.isArray(c.templates[t.id])?c.templates[t.id]:[]})});state=data;selectedCampus=0;selectedType='dm';selectedTemplate=0;save();render();toast('Backup berhasil di-import.')}catch(err){alert('File backup tidak valid. Pastikan menggunakan file JSON dari tombol Backup.')}};
+  reader.readAsText(file);e.target.value='';
+}
+function showAll(){document.getElementById('search').focus();toast('Gunakan pencarian untuk melihat template dari kampus aktif.')}
+function showGuide(){alert('PANDUAN SINGKAT\\n\\n1. Pilih kampus.\\n2. Pilih kategori DM, BC, Brosur, atau Daftar Online.\\n3. Pilih template.\\n4. Klik Copy untuk menyalin.\\n5. Klik Edit untuk mengubah.\\n6. Klik Tambah Teks Template untuk membuat template baru.\\n7. Data otomatis tersimpan di browser.\\n8. Gunakan Backup untuk menyimpan cadangan JSON.\n9. Untuk data bersama, login online dan pastikan status Tersinkronisasi.')}
+function showAbout(){alert('TEMPLATE KAMPUS\\n\\nStandalone HTML — tidak membutuhkan server atau database.\\nData tersimpan di localStorage browser.')}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>el.classList.remove('show'),2200)}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function attr(s){return esc(s)}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.getElementById('campusSettingsModal').addEventListener('click',e=>{if(e.target.id==='campusSettingsModal')closeCampusSettings()});
+render();
+initOnline();
+</script>
+</body>
+</html>
